@@ -1,0 +1,14 @@
+<nav>
+  <span class="brand">Macrochet Admin</span>
+  <ul>
+    <li><a href="/admin" class="<%= path === '/admin' ? 'active' : '' %>">Inicio</a></li>
+    <li><a href="/admin/products" class="<%= path.startsWith('/admin/products') ? 'active' : '' %>">Productos</a></li>
+    <li><a href="/admin/colors" class="<%= path.startsWith('/admin/colors') ? 'active' : '' %>">Colores</a></li>
+    <li><a href="/admin/categories" class="<%= path.startsWith('/admin/categories') ? 'active' : '' %>">Categorías</a></li>
+    <li><a href="/admin/announcements" class="<%= path.startsWith('/admin/announcements') ? 'active' : '' %>">Anuncios</a></li>
+    <li><a href="/admin/carousel" class="<%= path.startsWith('/admin/carousel') ? 'active' : '' %>">Carrusel</a></li>
+  </ul>
+  <form action="/logout" method="POST" style="margin:0">
+    <button class="logout" type="submit">Cerrar sesión</button>
+  </form>
+</nav>

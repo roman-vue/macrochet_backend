@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><%- include('../../partials/head', { title: 'Editar producto' }) %></head>
+<body>
+  <%- include('../../partials/nav', { path: '/admin/products' }) %>
+  <div class="page">
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+      <a href="/admin/products" style="font-size:.85rem;color:#888">← Volver</a>
+      <h1 style="margin:0">Editar producto</h1>
+    </div>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+    <% if (typeof success !== 'undefined' && success) { %>
+      <div class="alert alert-success"><%= success %></div>
+    <% } %>
+
+    <div class="card">
+      <form method="POST" action="/admin/products/<%= product._id %>" enctype="multipart/form-data">
+
+        <div class="form-group">
+          <label>Nombre *</label>
+          <input type="text" name="name" required value="<%= product.name %>" />
+        </div>
+
+        <div class="form-group">
+          <label>Descripción *</label>
+          <textarea name="description" required><%= product.description %></textarea>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="form-group">
+            <label>Precio *</label>
+            <input type="number" name="price" min="0" step="0.01" required value="<%= product.price %>" />
+          </div>
+          <div class="form-group">
+            <label>Stock</label>
+            <input type="number" name="stock" min="0" value="<%= product.stock %>" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Categoría *</label>
+          <input type="text" name="category" list="cat-list" required value="<%= product.category %>" />
+          <datalist id="cat-list">
+            <% categories.forEach(c => { %><option value="<%= c %>"><% }) %>
+          </datalist>
+        </div>
+
+        <div class="form-group">
+          <label>Colores</label>
+          <div style="display:flex;flex-wrap:wrap;gap:.6rem;padding:.5rem 0">
+            <% colors.forEach(c => { %>
+              <label style="display:flex;align-items:center;gap:.4rem;font-size:.875rem;cursor:pointer">
+                <input type="checkbox" name="colors" value="<%= c._id %>"
+                  <%= product.colors.map((id) => id.toString()).includes(c._id.toString()) ? 'checked' : '' %> />
+                <span class="swatch" style="background:<%= c.hex %>"></span>
+                <%= c.name %>
+              </label>
+            <% }) %>
+          </div>
+          <% if (!colors.length) { %><span class="hint">No hay colores registrados aún.</span><% } %>
+        </div>
+
+        <div class="form-group">
+          <label>¿Bestseller?</label>
+          <div class="check-row">
+            <input type="checkbox" name="isBestseller" id="bs" value="true" <%= product.isBestseller ? 'checked' : '' %> />
+            <label for="bs" style="text-transform:none;letter-spacing:0;font-size:.9rem;color:#333">Marcar como bestseller</label>
+          </div>
+        </div>
+
+        <!-- existing images -->
+        <% if (product.images && product.images.length) { %>
+        <div class="form-group">
+          <label>Imágenes actuales</label>
+          <div style="display:flex;flex-wrap:wrap;gap:.75rem;padding:.5rem 0">
+            <% product.images.forEach(img => { %>
+            <div style="position:relative">
+              <img src="<%= img %>" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #e5e5e5" />
+              <label style="position:absolute;top:-6px;right:-6px;cursor:pointer" title="Eliminar imagen">
+                <input type="checkbox" name="removeImages" value="<%= img %>" style="display:none" class="rm-cb"
+                  onchange="this.closest('div').style.opacity = this.checked ? '0.35' : '1'" />
+                <span style="display:flex;align-items:center;justify-content:center;width:18px;height:18px;
+                  background:#b91c1c;color:#fff;border-radius:50%;font-size:10px;font-weight:700;line-height:1">✕</span>
+              </label>
+            </div>
+            <% }) %>
+          </div>
+          <span class="hint">Haz clic en la ✕ de una imagen para marcarla para eliminar al guardar.</span>
+        </div>
+        <% } %>
+
+        <div class="form-group">
+          <label>Agregar imágenes nuevas</label>
+          <input type="file" name="images" multiple accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" />
+          <span class="hint">Se añaden a las existentes · máx. 10 · 5 MB cada una</span>
+        </div>
+
+        <div style="display:flex;gap:.75rem;margin-top:.5rem">
+          <button class="btn btn-primary" type="submit">Guardar cambios</button>
+          <a class="btn" style="background:#f5f5f5;border:1px solid #e5e5e5" href="/admin/products">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

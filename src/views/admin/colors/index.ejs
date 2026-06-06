@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><%- include('../../partials/head', { title: 'Colores' }) %></head>
+<body>
+  <%- include('../../partials/nav', { path: '/admin/colors' }) %>
+  <div class="page">
+    <h1>Colores</h1>
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+    <% if (typeof success !== 'undefined' && success) { %>
+      <div class="alert alert-success"><%= success %></div>
+    <% } %>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start">
+
+      <!-- form -->
+      <div class="card">
+        <h2>Registrar color</h2>
+        <form method="POST" action="/admin/colors">
+          <div class="form-group">
+            <label>Nombre *</label>
+            <input type="text" name="name" required placeholder="Ej: Rojo coral" />
+          </div>
+          <div class="form-group">
+            <label>Código hex *</label>
+            <div class="color-row">
+              <input type="color" id="picker" value="#000000" />
+              <input type="text" name="hex" id="hexInput" required placeholder="#000000" maxlength="7" />
+            </div>
+            <span class="hint">#RGB o #RRGGBB</span>
+          </div>
+          <button class="btn btn-primary" type="submit">Guardar</button>
+        </form>
+      </div>
+
+      <!-- list -->
+      <div class="card">
+        <h2>Colores registrados</h2>
+        <% if (!colors.length) { %>
+          <p style="font-size:.875rem;color:#888">No hay colores todavía.</p>
+        <% } else { %>
+          <table>
+            <thead><tr><th>Color</th><th>Hex</th><th></th></tr></thead>
+            <tbody>
+              <% colors.forEach(c => { %>
+              <tr>
+                <td><span class="swatch" style="background:<%= c.hex %>"></span><%= c.name %></td>
+                <td style="font-family:monospace;color:#555"><%= c.hex %></td>
+                <td>
+                  <form method="POST" action="/admin/colors/<%= c._id %>/delete" style="margin:0">
+                    <button class="btn btn-sm" style="background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c" type="submit"
+                      onclick="return confirm('¿Eliminar <%= c.name %>?')">Eliminar</button>
+                  </form>
+                </td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        <% } %>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const picker = document.getElementById('picker');
+    const hexInput = document.getElementById('hexInput');
+    picker.addEventListener('input', () => { hexInput.value = picker.value; });
+    hexInput.addEventListener('input', () => {
+      if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(hexInput.value)) picker.value = hexInput.value;
+    });
+  </script>
+</body>
+</html>

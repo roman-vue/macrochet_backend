@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><%- include('../../partials/head', { title: 'Categorías' }) %></head>
+<body>
+  <%- include('../../partials/nav', { path: '/admin/categories' }) %>
+  <div class="page">
+    <h1>Categorías</h1>
+    <div class="card">
+      <% if (!categories.length) { %>
+        <p style="font-size:.875rem;color:#888">No hay categorías todavía. Se crean al registrar un producto.</p>
+      <% } else { %>
+        <table>
+          <thead><tr><th>Nombre</th></tr></thead>
+          <tbody>
+            <% categories.forEach(c => { %>
+            <tr><td><%= c %></td></tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+      <div style="margin-top:1.25rem">
+        <a class="btn btn-primary" href="/admin/products/create">+ Crear producto con nueva categoría</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

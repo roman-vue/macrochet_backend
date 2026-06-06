@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><%- include('../../partials/head', { title: 'Anuncios' }) %></head>
+<body>
+  <%- include('../../partials/nav', { path: '/admin/announcements' }) %>
+  <div class="page">
+    <h1>Anuncios</h1>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+    <% if (typeof success !== 'undefined' && success) { %>
+      <div class="alert alert-success"><%= success %></div>
+    <% } %>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start">
+
+      <!-- form -->
+      <div class="card">
+        <h2><%= editing ? 'Editar anuncio' : 'Nuevo anuncio' %></h2>
+        <form method="POST" action="<%= editing ? '/admin/announcements/' + editing._id : '/admin/announcements' %>">
+          <div class="form-group">
+            <label>Título *</label>
+            <input type="text" name="title" required value="<%= editing ? editing.title : '' %>" />
+          </div>
+          <div class="form-group">
+            <label>Mensaje *</label>
+            <textarea name="message" required><%= editing ? editing.message : '' %></textarea>
+          </div>
+          <div class="form-group">
+            <label>Estado</label>
+            <div class="check-row">
+              <input type="checkbox" name="status" id="status" value="true" <%= (!editing || editing.status) ? 'checked' : '' %> />
+              <label for="status" style="text-transform:none;letter-spacing:0;font-size:.9rem;color:#333">Activo (visible en la web)</label>
+            </div>
+          </div>
+          <div style="display:flex;gap:.75rem">
+            <button class="btn btn-primary" type="submit"><%= editing ? 'Guardar cambios' : 'Crear anuncio' %></button>
+            <% if (editing) { %>
+              <a class="btn" style="background:#f5f5f5;border:1px solid #e5e5e5" href="/admin/announcements">Cancelar</a>
+            <% } %>
+          </div>
+        </form>
+      </div>
+
+      <!-- list -->
+      <div class="card">
+        <h2>Anuncios registrados (<%= announcements.length %>)</h2>
+        <% if (!announcements.length) { %>
+          <p style="font-size:.875rem;color:#888">No hay anuncios todavía.</p>
+        <% } else { %>
+          <div style="display:flex;flex-direction:column;gap:.75rem">
+            <% announcements.forEach(a => { %>
+            <div style="border:1px solid #e5e5e5;border-radius:8px;padding:.9rem 1rem">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem">
+                <div>
+                  <div style="font-weight:500;font-size:.9rem"><%= a.title %></div>
+                  <div style="font-size:.8rem;color:#666;margin-top:.2rem"><%= a.message %></div>
+                </div>
+                <span style="flex-shrink:0;font-size:.7rem;font-weight:500;padding:.2rem .5rem;border-radius:4px;
+                  background:<%= a.status ? '#f0fdf4' : '#f5f5f5' %>;
+                  color:<%= a.status ? '#15803d' : '#888' %>;
+                  border:1px solid <%= a.status ? '#86efac' : '#ddd' %>">
+                  <%= a.status ? 'Activo' : 'Inactivo' %>
+                </span>
+              </div>
+              <div style="display:flex;gap:.5rem;margin-top:.75rem">
+                <a class="btn btn-sm" style="background:#f5f5f5;border:1px solid #e5e5e5" href="/admin/announcements/<%= a._id %>/edit">Editar</a>
+                <form method="POST" action="/admin/announcements/<%= a._id %>/toggle" style="margin:0">
+                  <button class="btn btn-sm" style="background:#f5f5f5;border:1px solid #e5e5e5" type="submit">
+                    <%= a.status ? 'Desactivar' : 'Activar' %>
+                  </button>
+                </form>
+                <form method="POST" action="/admin/announcements/<%= a._id %>/delete" style="margin:0">
+                  <button class="btn btn-sm" style="background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c" type="submit"
+                    onclick="return confirm('¿Eliminar este anuncio?')">Eliminar</button>
+                </form>
+              </div>
+            </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><%- include('../partials/head', { title: 'Inicio' }) %></head>
+<body>
+  <%- include('../partials/nav', { path: '/admin' }) %>
+  <div class="page">
+    <h1>Panel de administración</h1>
+    <div class="grid-3">
+      <div class="stat-card">
+        <div class="num"><%= stats.products %></div>
+        <div class="lbl">Productos</div>
+      </div>
+      <div class="stat-card">
+        <div class="num"><%= stats.colors %></div>
+        <div class="lbl">Colores</div>
+      </div>
+      <div class="stat-card">
+        <div class="num"><%= stats.categories %></div>
+        <div class="lbl">Categorías</div>
+      </div>
+      <div class="stat-card">
+        <div class="num"><%= stats.totalStock %></div>
+        <div class="lbl">Unidades en stock</div>
+      </div>
+      <div class="stat-card" style="grid-column:span 2">
+        <div class="num">$<%= stats.totalValue.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+        <div class="lbl">Valor total del inventario</div>
+      </div>
+    </div>
+    <div class="quick-links">
+      <a href="/admin/products/create">+ Nuevo producto</a>
+      <a href="/admin/colors">+ Nuevo color</a>
+      <a href="/admin/categories">Ver categorías</a>
+      <a href="/admin/announcements">Anuncios</a>
+    </div>
+  </div>
+</body>
+</html>

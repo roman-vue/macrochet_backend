@@ -1,0 +1,10 @@
+node_modules
+dist
+logs
+public/uploads
+.env
+.env.*
+*.md
+.dockerignore
+Dockerfile
+.claude

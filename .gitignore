@@ -5,3 +5,4 @@ logs/*.log
 public/uploads/*
 !public/uploads/.gitkeep
 CLAUDE.md
+.claude/*

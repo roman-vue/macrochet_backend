@@ -16,7 +16,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
+// En dev __dirname = src/, en producción (dist/) subimos un nivel para llegar a src/views
+app.set('views', path.join(__dirname, '..', 'src', 'views'));
 
 app.use(cors());
 app.use(express.json());

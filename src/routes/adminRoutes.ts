@@ -1,12 +1,11 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import fs from 'fs';
-import path from 'path';
 import { Product } from '../models/Product';
 import { Color } from '../models/Color';
 import { Announcement } from '../models/Announcement';
 import { Carousel } from '../models/Carousel';
 import { requireLogin } from '../middlewares/sessionAuth';
 import { upload } from '../middlewares/upload';
+import { deleteImage } from '../utils/imageStorage';
 
 const router = Router();
 
@@ -73,7 +72,7 @@ router.get('/admin/products/create', requireLogin, a(async (_req, res) => {
 
 router.post('/admin/products', requireLogin, upload.array('images', 10), a(async (req, res) => {
   const files = (req.files as Express.Multer.File[]) ?? [];
-  const images = files.map(f => `/uploads/${f.filename}`);
+  const images = files.map(f => f.path);
 
   const { name, description, price, stock, category, isBestseller } = req.body as Record<string, string>;
   const colorIds: string[] = req.body.colors
@@ -127,13 +126,10 @@ router.post('/admin/products/:id', requireLogin, upload.array('images', 10), a(a
   const toRemove: string[] = req.body.removeImages
     ? Array.isArray(req.body.removeImages) ? req.body.removeImages : [req.body.removeImages]
     : [];
-  toRemove.forEach(img => {
-    const filepath = path.join(process.cwd(), 'public', img);
-    if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
-  });
+  await Promise.all(toRemove.map(img => deleteImage(img)));
 
   // Append new uploaded images
-  const newImages = ((req.files as Express.Multer.File[]) ?? []).map(f => `/uploads/${f.filename}`);
+  const newImages = ((req.files as Express.Multer.File[]) ?? []).map(f => f.path);
   const updatedImages = [...product.images.filter(img => !toRemove.includes(img)), ...newImages];
 
   await Product.findByIdAndUpdate(req.params.id, {
@@ -178,10 +174,7 @@ router.post('/admin/products/:id/bestseller', requireLogin, a(async (req, res) =
 router.post('/admin/products/:id/delete', requireLogin, a(async (req, res) => {
   const product = await Product.findByIdAndDelete(req.params.id);
   if (product?.images?.length) {
-    product.images.forEach(img => {
-      const filepath = path.join(process.cwd(), 'public', img);
-      if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
-    });
+    await Promise.all(product.images.map(img => deleteImage(img)));
   }
   const products = await Product.find().sort({ createdAt: -1 });
   res.render('admin/products/index', {
@@ -296,7 +289,7 @@ router.post('/admin/carousel', requireLogin, upload.single('image'), a(async (re
   }
   const { title, order, active } = req.body as Record<string, string>;
   await Carousel.create({
-    image: `/uploads/${file.filename}`,
+    image: file.path,
     title: title ?? '',
     order: parseInt(order ?? '0', 10),
     active: active === 'true',
@@ -322,8 +315,7 @@ router.post('/admin/carousel/:id/toggle', requireLogin, a(async (req, res) => {
 router.post('/admin/carousel/:id/delete', requireLogin, a(async (req, res) => {
   const slide = await Carousel.findByIdAndDelete(req.params.id);
   if (slide?.image) {
-    const filepath = path.join(process.cwd(), 'public', slide.image);
-    if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
+    await deleteImage(slide.image);
   }
   const slides = await Carousel.find().sort({ order: 1, createdAt: 1 });
   res.render('admin/carousel/index', { path: '/admin/carousel', slides, error: null, success: 'Diapositiva eliminada.' });

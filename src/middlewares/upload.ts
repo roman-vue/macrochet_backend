@@ -1,16 +1,18 @@
 import multer, { FileFilterCallback } from 'multer';
 import path from 'path';
 import { Request } from 'express';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import cloudinary from '../config/cloudinary';
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, path.join(process.cwd(), 'public', 'uploads'));
-  },
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const name = `${Date.now()}-${Math.round(Math.random() * 1e6)}${ext}`;
-    cb(null, name);
-  },
+// Los tipos de multer-storage-cloudinary colapsan a `{}` cuando cloudinary
+// define un index signature en UploadApiOptions — cast necesario, ver:
+// https://github.com/affanshahid/multer-storage-cloudinary/issues (KnownKeys + index signature)
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'macrochet',
+    allowed_formats: ['jpeg', 'jpg', 'png', 'webp', 'gif'],
+  } as any,
 });
 
 const fileFilter = (_req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {

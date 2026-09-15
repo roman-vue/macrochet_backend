@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
-import path from 'path';
-import fs from 'fs';
 import { Product } from '../models/Product';
+import { deleteImage } from '../utils/imageStorage';
 
 export const getProducts = async (req: Request, res: Response): Promise<void> => {
   const { category, isBestseller, minPrice, maxPrice, color, page = '1', limit = '10' } = req.query;
@@ -55,9 +54,7 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
     return;
   }
 
-  const images = (req.files as Express.Multer.File[] | undefined)?.map(
-    (f) => `/uploads/${f.filename}`
-  ) ?? [];
+  const images = (req.files as Express.Multer.File[] | undefined)?.map((f) => f.path) ?? [];
 
   const colorsArr = colors
     ? (Array.isArray(colors) ? colors : [colors])
@@ -91,9 +88,7 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
     return;
   }
 
-  const newImages = (req.files as Express.Multer.File[] | undefined)?.map(
-    (f) => `/uploads/${f.filename}`
-  ) ?? [];
+  const newImages = (req.files as Express.Multer.File[] | undefined)?.map((f) => f.path) ?? [];
 
   const updates: Partial<typeof product> = {};
   if (name) updates.name = name;
@@ -116,10 +111,9 @@ export const deleteProduct = async (req: Request, res: Response): Promise<void> 
     return;
   }
 
-  // Remove uploaded images from disk
+  // Remove uploaded images (Cloudinary or legacy local disk)
   for (const img of product.images) {
-    const filePath = path.join(process.cwd(), 'public', img);
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    await deleteImage(img);
   }
 
   res.json({ success: true, message: 'Product deleted' });
@@ -132,9 +126,7 @@ export const uploadImages = async (req: Request, res: Response): Promise<void> =
     return;
   }
 
-  const newImages = (req.files as Express.Multer.File[] | undefined)?.map(
-    (f) => `/uploads/${f.filename}`
-  ) ?? [];
+  const newImages = (req.files as Express.Multer.File[] | undefined)?.map((f) => f.path) ?? [];
 
   if (newImages.length === 0) {
     res.status(400).json({ success: false, message: 'No images provided' });

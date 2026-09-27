@@ -2,7 +2,6 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { Product } from '../models/Product';
 import { Color } from '../models/Color';
 import { Announcement } from '../models/Announcement';
-import { Carousel } from '../models/Carousel';
 import { requireLogin } from '../middlewares/sessionAuth';
 import { upload } from '../middlewares/upload';
 import { deleteImage } from '../utils/imageStorage';
@@ -222,33 +221,62 @@ router.post('/admin/colors/:id/delete', requireLogin, a(async (req, res) => {
 // ── Announcements ─────────────────────────────────────────────────────────────
 
 router.get('/admin/announcements', requireLogin, a(async (_req, res) => {
-  const announcements = await Announcement.find().sort({ createdAt: -1 });
+  const announcements = await Announcement.find().sort({ order: 1, createdAt: -1 });
   res.render('admin/announcements/index', { path: '/admin/announcements', announcements, editing: null, error: null, success: null });
 }));
 
 router.get('/admin/announcements/:id/edit', requireLogin, a(async (req, res) => {
   const [announcements, editing] = await Promise.all([
-    Announcement.find().sort({ createdAt: -1 }),
+    Announcement.find().sort({ order: 1, createdAt: -1 }),
     Announcement.findById(req.params.id),
   ]);
   if (!editing) return res.redirect('/admin/announcements');
   res.render('admin/announcements/index', { path: '/admin/announcements', announcements, editing, error: null, success: null });
 }));
 
-router.post('/admin/announcements', requireLogin, a(async (req, res) => {
-  const { title, message, status } = req.body as Record<string, string>;
-  await Announcement.create({ title, message, status: status === 'true' });
-  const announcements = await Announcement.find().sort({ createdAt: -1 });
+router.post('/admin/announcements', requireLogin, upload.single('image'), a(async (req, res) => {
+  const file = req.file;
+  if (!file) {
+    const announcements = await Announcement.find().sort({ order: 1, createdAt: -1 });
+    return res.render('admin/announcements/index', {
+      path: '/admin/announcements', announcements, editing: null, success: null,
+      error: 'Debes seleccionar una imagen.',
+    });
+  }
+  const { title, message, order, status } = req.body as Record<string, string>;
+  await Announcement.create({
+    title,
+    message,
+    image: file.path,
+    order: parseInt(order ?? '0', 10),
+    status: status === 'true',
+  });
+  const announcements = await Announcement.find().sort({ order: 1, createdAt: -1 });
   res.render('admin/announcements/index', {
     path: '/admin/announcements', announcements, editing: null, error: null,
     success: `Anuncio "${title}" creado.`,
   });
 }));
 
-router.post('/admin/announcements/:id', requireLogin, a(async (req, res) => {
-  const { title, message, status } = req.body as Record<string, string>;
-  await Announcement.findByIdAndUpdate(req.params.id, { title, message, status: status === 'true' });
-  const announcements = await Announcement.find().sort({ createdAt: -1 });
+router.post('/admin/announcements/:id', requireLogin, upload.single('image'), a(async (req, res) => {
+  const { title, message, order, status } = req.body as Record<string, string>;
+  const file = req.file;
+
+  const current = await Announcement.findById(req.params.id);
+  if (!current) return res.redirect('/admin/announcements');
+
+  if (file) {
+    await deleteImage(current.image);
+  }
+
+  await Announcement.findByIdAndUpdate(req.params.id, {
+    title,
+    message,
+    order: parseInt(order ?? '0', 10),
+    status: status === 'true',
+    ...(file && { image: file.path }),
+  });
+  const announcements = await Announcement.find().sort({ order: 1, createdAt: -1 });
   res.render('admin/announcements/index', {
     path: '/admin/announcements', announcements, editing: null, error: null,
     success: 'Anuncio actualizado.',
@@ -258,7 +286,7 @@ router.post('/admin/announcements/:id', requireLogin, a(async (req, res) => {
 router.post('/admin/announcements/:id/toggle', requireLogin, a(async (req, res) => {
   const ann = await Announcement.findById(req.params.id);
   if (ann) await Announcement.findByIdAndUpdate(req.params.id, { status: !ann.status });
-  const announcements = await Announcement.find().sort({ createdAt: -1 });
+  const announcements = await Announcement.find().sort({ order: 1, createdAt: -1 });
   res.render('admin/announcements/index', {
     path: '/admin/announcements', announcements, editing: null, error: null,
     success: ann ? `Anuncio "${ann.title}" ${!ann.status ? 'activado' : 'desactivado'}.` : null,
@@ -267,58 +295,14 @@ router.post('/admin/announcements/:id/toggle', requireLogin, a(async (req, res) 
 
 router.post('/admin/announcements/:id/delete', requireLogin, a(async (req, res) => {
   const ann = await Announcement.findByIdAndDelete(req.params.id);
-  const announcements = await Announcement.find().sort({ createdAt: -1 });
+  if (ann?.image) {
+    await deleteImage(ann.image);
+  }
+  const announcements = await Announcement.find().sort({ order: 1, createdAt: -1 });
   res.render('admin/announcements/index', {
     path: '/admin/announcements', announcements, editing: null, error: null,
     success: ann ? `Anuncio "${ann.title}" eliminado.` : 'Anuncio eliminado.',
   });
-}));
-
-// ── Carousel ──────────────────────────────────────────────────────────────────
-
-router.get('/admin/carousel', requireLogin, a(async (_req, res) => {
-  const slides = await Carousel.find().sort({ order: 1, createdAt: 1 });
-  res.render('admin/carousel/index', { path: '/admin/carousel', slides, error: null, success: null });
-}));
-
-router.post('/admin/carousel', requireLogin, upload.single('image'), a(async (req, res) => {
-  const file = req.file;
-  if (!file) {
-    const slides = await Carousel.find().sort({ order: 1, createdAt: 1 });
-    return res.render('admin/carousel/index', { path: '/admin/carousel', slides, success: null, error: 'Debes seleccionar una imagen.' });
-  }
-  const { title, order, active } = req.body as Record<string, string>;
-  await Carousel.create({
-    image: file.path,
-    title: title ?? '',
-    order: parseInt(order ?? '0', 10),
-    active: active === 'true',
-  });
-  const slides = await Carousel.find().sort({ order: 1, createdAt: 1 });
-  res.render('admin/carousel/index', { path: '/admin/carousel', slides, error: null, success: 'Diapositiva agregada.' });
-}));
-
-router.post('/admin/carousel/:id/order', requireLogin, a(async (req, res) => {
-  const order = parseInt(req.body.order ?? '0', 10);
-  await Carousel.findByIdAndUpdate(req.params.id, { order: Math.max(0, order) });
-  const slides = await Carousel.find().sort({ order: 1, createdAt: 1 });
-  res.render('admin/carousel/index', { path: '/admin/carousel', slides, error: null, success: 'Orden actualizado.' });
-}));
-
-router.post('/admin/carousel/:id/toggle', requireLogin, a(async (req, res) => {
-  const slide = await Carousel.findById(req.params.id);
-  if (slide) await Carousel.findByIdAndUpdate(req.params.id, { active: !slide.active });
-  const slides = await Carousel.find().sort({ order: 1, createdAt: 1 });
-  res.render('admin/carousel/index', { path: '/admin/carousel', slides, error: null, success: null });
-}));
-
-router.post('/admin/carousel/:id/delete', requireLogin, a(async (req, res) => {
-  const slide = await Carousel.findByIdAndDelete(req.params.id);
-  if (slide?.image) {
-    await deleteImage(slide.image);
-  }
-  const slides = await Carousel.find().sort({ order: 1, createdAt: 1 });
-  res.render('admin/carousel/index', { path: '/admin/carousel', slides, error: null, success: 'Diapositiva eliminada.' });
 }));
 
 // ── Categories ────────────────────────────────────────────────────────────────

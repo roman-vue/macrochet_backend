@@ -9,7 +9,6 @@ import productRoutes from './routes/products';
 import colorRoutes from './routes/colors';
 import announcementRoutes from './routes/announcements';
 import categoryRoutes from './routes/categories';
-import carouselRoutes from './routes/carousel';
 import adminRoutes from './routes/adminRoutes';
 
 const app = express();
@@ -43,7 +42,6 @@ app.use('/api/products', productRoutes);
 app.use('/api/colors', colorRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/categories', categoryRoutes);
-app.use('/api/carousel', carouselRoutes);
 
 // Health check
 app.get('/health', (_req: Request, res: Response) => {

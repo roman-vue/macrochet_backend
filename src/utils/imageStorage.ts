@@ -8,7 +8,8 @@ function extractPublicId(url: string): string | null {
   return match ? match[1] : null;
 }
 
-export async function deleteImage(img: string): Promise<void> {
+export async function deleteImage(img: string | undefined | null): Promise<void> {
+  if (!img) return;
   if (img.startsWith('http')) {
     const publicId = extractPublicId(img);
     if (!publicId) {

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><%- include('../../partials/head', { title: 'Carrusel' }) %></head>
+<body>
+  <%- include('../../partials/nav', { path: '/admin/carousel' }) %>
+  <div class="page">
+    <h1>Carrusel</h1>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+    <% if (typeof success !== 'undefined' && success) { %>
+      <div class="alert alert-success"><%= success %></div>
+    <% } %>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start">
+
+      <!-- form -->
+      <div class="card">
+        <h2>Agregar diapositiva</h2>
+        <form method="POST" action="/admin/carousel" enctype="multipart/form-data">
+          <div class="form-group">
+            <label>Imagen *</label>
+            <input type="file" name="image" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" required />
+            <span class="hint">jpeg, png, webp, gif · máx. 5 MB</span>
+          </div>
+          <div class="form-group">
+            <label>Título <span style="font-weight:400;text-transform:none;letter-spacing:0">(opcional)</span></label>
+            <input type="text" name="title" placeholder="Ej: Nueva colección" />
+          </div>
+          <div class="form-group">
+            <label>Orden</label>
+            <input type="number" name="order" value="0" min="0" />
+            <span class="hint">Menor número aparece primero.</span>
+          </div>
+          <div class="form-group">
+            <label>Estado</label>
+            <div class="check-row">
+              <input type="checkbox" name="active" id="active" value="true" checked />
+              <label for="active" style="text-transform:none;letter-spacing:0;font-size:.9rem;color:#333">Activa desde el inicio</label>
+            </div>
+          </div>
+          <button class="btn btn-primary" type="submit">Subir diapositiva</button>
+        </form>
+      </div>
+
+      <!-- list -->
+      <div class="card">
+        <h2>Diapositivas (<%= slides.length %>)</h2>
+        <% if (!slides.length) { %>
+          <p style="font-size:.875rem;color:#888">No hay diapositivas todavía.</p>
+        <% } else { %>
+          <div style="display:flex;flex-direction:column;gap:.75rem">
+            <% slides.forEach(s => { %>
+            <div style="border:1px solid #e5e5e5;border-radius:8px;overflow:hidden">
+              <div style="position:relative">
+                <img src="<%= s.image %>" alt="<%= s.title %>"
+                  style="width:100%;height:140px;object-fit:cover;display:block" />
+                <span style="position:absolute;top:.5rem;right:.5rem;font-size:.7rem;font-weight:500;padding:.2rem .5rem;border-radius:4px;
+                  background:<%= s.active ? '#f0fdf4' : '#f5f5f5' %>;
+                  color:<%= s.active ? '#15803d' : '#888' %>;
+                  border:1px solid <%= s.active ? '#86efac' : '#ddd' %>">
+                  <%= s.active ? 'Activa' : 'Inactiva' %>
+                </span>
+                <span style="position:absolute;top:.5rem;left:.5rem;font-size:.7rem;font-weight:600;padding:.2rem .5rem;border-radius:4px;background:#0005;color:#fff">
+                  #<%= s.order %>
+                </span>
+              </div>
+              <div style="padding:.75rem 1rem">
+                <% if (s.title) { %>
+                  <div style="font-weight:500;font-size:.875rem;margin-bottom:.5rem"><%= s.title %></div>
+                <% } %>
+                <!-- order edit -->
+                <form method="POST" action="/admin/carousel/<%= s._id %>/order" style="display:flex;gap:.4rem;margin-bottom:.5rem">
+                  <input type="number" name="order" value="<%= s.order %>" min="0"
+                    style="width:60px;padding:.25rem .4rem;border:1px solid #d4d4d4;border-radius:6px;font-size:.8rem;font-family:inherit" />
+                  <button class="btn btn-sm" style="background:#f5f5f5;border:1px solid #d4d4d4" type="submit">Reordenar</button>
+                </form>
+                <div style="display:flex;gap:.5rem">
+                  <form method="POST" action="/admin/carousel/<%= s._id %>/toggle" style="margin:0">
+                    <button class="btn btn-sm" style="background:#f5f5f5;border:1px solid #e5e5e5" type="submit">
+                      <%= s.active ? 'Desactivar' : 'Activar' %>
+                    </button>
+                  </form>
+                  <form method="POST" action="/admin/carousel/<%= s._id %>/delete" style="margin:0">
+                    <button class="btn btn-sm" style="background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c" type="submit"
+                      onclick="return confirm('¿Eliminar esta diapositiva?')">Eliminar</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>

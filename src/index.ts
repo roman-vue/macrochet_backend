@@ -10,6 +10,7 @@ import colorRoutes from './routes/colors';
 import announcementRoutes from './routes/announcements';
 import categoryRoutes from './routes/categories';
 import adminRoutes from './routes/adminRoutes';
+import sitemapRoutes from './routes/sitemap';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -42,6 +43,9 @@ app.use('/api/products', productRoutes);
 app.use('/api/colors', colorRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/categories', categoryRoutes);
+
+// Sitemap dinámico (Netlify lo proxea desde /sitemap.xml)
+app.use('/', sitemapRoutes);
 
 // Health check
 app.get('/health', (_req: Request, res: Response) => {

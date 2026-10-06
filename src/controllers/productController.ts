@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { Types } from 'mongoose';
 import { Product } from '../models/Product';
 import { deleteImage } from '../utils/imageStorage';
 
@@ -33,6 +34,11 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
 };
 
 export const getProductById = async (req: Request, res: Response): Promise<void> => {
+  if (!Types.ObjectId.isValid(req.params.id)) {
+    res.status(404).json({ success: false, message: 'Product not found' });
+    return;
+  }
+
   const product = await Product.findById(req.params.id).populate('colors');
   if (!product) {
     res.status(404).json({ success: false, message: 'Product not found' });

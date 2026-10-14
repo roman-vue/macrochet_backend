@@ -1,0 +1,24 @@
+<div class="card pay-card">
+  <input type="hidden" name="accounts[<%= idx %>][type]" value="<%= type %>" />
+  <div class="card-top">
+    <span class="num">Cuenta</span>
+    <div class="check-row" style="min-height:0">
+      <input id="act-<%= idx %>" name="accounts[<%= idx %>][active]" type="checkbox" <%= acc.active ? 'checked' : '' %> />
+      <label for="act-<%= idx %>">Activa</label>
+    </div>
+  </div>
+  <% T.fields.forEach(f => { const id = 'f-' + idx + '-' + f.key; const v = acc.fields[f.key] || ''; %>
+  <div class="form-group">
+    <label for="<%= id %>"><%= f.label %></label>
+    <% if (f.options) { %>
+      <select id="<%= id %>" name="accounts[<%= idx %>][fields][<%= f.key %>]">
+        <% f.options.forEach(o => { %><option <%= v === o ? 'selected' : '' %>><%= o %></option><% }) %>
+        <% if (v && !f.options.includes(v)) { %><option selected><%= v %></option><% } %>
+      </select>
+    <% } else { %>
+      <input id="<%= id %>" name="accounts[<%= idx %>][fields][<%= f.key %>]" type="text" maxlength="120" value="<%= v %>" />
+    <% } %>
+  </div>
+  <% }) %>
+  <button type="button" class="btn-remove" data-remove>Eliminar</button>
+</div>

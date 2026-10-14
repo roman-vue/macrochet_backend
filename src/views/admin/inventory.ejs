@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><%- include('../partials/head', { title: 'Inventario' }) %></head>
+<body>
+  <%- include('../partials/nav', { path: '/admin/inventory' }) %>
+  <div class="page">
+    <h1>Inventario</h1>
+    <% if (success) { %><div class="alert alert-success" role="status"><%= success %></div><% } %>
+    <p class="muted" style="margin-bottom:1.25rem">Stock 0 = agotado: en la tienda se muestra sin precio y no se puede agregar al carrito.</p>
+
+    <% if (!products.length) { %>
+      <div class="card muted" style="text-align:center;padding:3rem">No hay productos todavía.</div>
+    <% } else { %>
+    <form method="POST" action="/admin/inventory">
+      <div class="card" style="padding:0;overflow-x:auto">
+        <table>
+          <thead><tr><th>Producto</th><th>Categoría</th><th>Precio</th><th style="width:140px">Stock</th></tr></thead>
+          <tbody>
+            <% products.forEach(p => { %>
+            <tr>
+              <td>
+                <div style="display:flex;align-items:center;gap:12px">
+                  <% if (p.images && p.images.length) { %>
+                    <img src="<%= p.images[0].replace('/upload/', '/upload/w_88,h_88,c_fill,f_auto,q_auto/') %>" alt="" width="44" height="44" style="object-fit:cover;border-radius:8px;border:1px solid var(--border)" />
+                  <% } %>
+                  <label for="s<%= p._id %>" style="text-transform:none;letter-spacing:0;font-size:.95rem;font-weight:700"><%= p.name %></label>
+                  <% if (p.stock === 0) { %><span class="chip chip-agotado">Agotado</span><% } %>
+                </div>
+              </td>
+              <td class="muted"><%= p.category %></td>
+              <td><%= money(p.price) %></td>
+              <td><input id="s<%= p._id %>" name="stock[<%= p._id %>]" type="number" min="0" value="<%= p.stock %>" /></td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:1.25rem;text-align:right"><button class="btn btn-primary" type="submit">Guardar inventario</button></div>
+    </form>
+    <% } %>
+  </div>
+</body>
+</html>

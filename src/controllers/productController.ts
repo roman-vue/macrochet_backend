@@ -34,12 +34,14 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
 };
 
 export const getProductById = async (req: Request, res: Response): Promise<void> => {
-  if (!Types.ObjectId.isValid(req.params.id)) {
+  // Acepta "<id>" o "<slug>-<id>" (mismo formato que /productos/... del front)
+  const id = req.params.id.match(/([a-f0-9]{24})$/i)?.[1] ?? req.params.id;
+  if (!Types.ObjectId.isValid(id)) {
     res.status(404).json({ success: false, message: 'Product not found' });
     return;
   }
 
-  const product = await Product.findById(req.params.id).populate('colors');
+  const product = await Product.findById(id).populate('colors');
   if (!product) {
     res.status(404).json({ success: false, message: 'Product not found' });
     return;

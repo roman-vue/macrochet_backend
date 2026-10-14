@@ -19,7 +19,10 @@
     "mongoose": "^8.4.1",
     "multer": "^1.4.5-lts.1",
     "multer-storage-cloudinary": "^4.0.0",
-    "winston": "^3.13.0"
+    "pdfkit": "^0.20.2",
+    "qrcode": "^1.5.4",
+    "winston": "^3.13.0",
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
@@ -28,6 +31,8 @@
     "@types/express-session": "^1.19.0",
     "@types/multer": "^1.4.11",
     "@types/node": "^20.14.2",
+    "@types/pdfkit": "^0.17.6",
+    "@types/qrcode": "^1.5.6",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.4.5"
   }

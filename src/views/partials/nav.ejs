@@ -1,13 +1,20 @@
-<nav>
-  <span class="brand">Macrochet Admin</span>
+<script>document.body.classList.add('has-sidebar')</script>
+<nav class="sidebar" aria-label="Panel admin">
+  <div class="brand">MACROCHET<small>Panel admin</small></div>
   <ul>
     <li><a href="/admin" class="<%= path === '/admin' ? 'active' : '' %>">Inicio</a></li>
     <li><a href="/admin/products" class="<%= path.startsWith('/admin/products') ? 'active' : '' %>">Productos</a></li>
+    <li><a href="/admin/orders" class="<%= path.startsWith('/admin/orders') ? 'active' : '' %>">Pedidos
+      <% if (typeof pendingOrders !== 'undefined' && pendingOrders > 0) { %><span class="count" aria-label="<%= pendingOrders %> esperando comprobante"><%= pendingOrders %></span><% } %></a></li>
+    <li><a href="/admin/quotes" class="<%= path.startsWith('/admin/quotes') ? 'active' : '' %>">Cotizaciones</a></li>
+    <li><a href="/admin/inventory" class="<%= path.startsWith('/admin/inventory') ? 'active' : '' %>">Inventario</a></li>
+    <li><a href="/admin/payment-methods" class="<%= path.startsWith('/admin/payment-methods') ? 'active' : '' %>">Métodos de pago</a></li>
+    <li><a href="/admin/announcements" class="<%= path.startsWith('/admin/announcements') ? 'active' : '' %>">Anuncios</a></li>
+    <li><a href="/admin/carousel" class="<%= path.startsWith('/admin/carousel') ? 'active' : '' %>">Carrusel</a></li>
     <li><a href="/admin/colors" class="<%= path.startsWith('/admin/colors') ? 'active' : '' %>">Colores</a></li>
     <li><a href="/admin/categories" class="<%= path.startsWith('/admin/categories') ? 'active' : '' %>">Categorías</a></li>
-    <li><a href="/admin/announcements" class="<%= path.startsWith('/admin/announcements') ? 'active' : '' %>">Anuncios</a></li>
   </ul>
-  <form action="/logout" method="POST" style="margin:0">
+  <form action="/logout" method="POST">
     <button class="logout" type="submit">Cerrar sesión</button>
   </form>
 </nav>

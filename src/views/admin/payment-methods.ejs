@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><%- include('../partials/head', { title: 'Métodos de pago' }) %>
+<style>
+  .pay-type { margin-bottom: 2rem; }
+  .pay-type-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 1rem; }
+  .pay-type-head h2 { margin: 0; }
+  .pay-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+  .pay-card { position: relative; }
+  .pay-card .card-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: .75rem; }
+  .pay-card .num { font-weight: 700; color: var(--ink-2); font-size: .85rem; letter-spacing: .1em; text-transform: uppercase; }
+  .btn-remove { background: none; border: none; color: #7a1f1f; font: inherit; font-size: .85rem; text-decoration: underline; cursor: pointer; min-height: 44px; }
+  .empty { color: var(--ink-2); font-size: .9rem; padding: .5rem 0; }
+</style>
+</head>
+<body>
+  <%- include('../partials/nav', { path: '/admin/payment-methods' }) %>
+  <div class="page">
+    <h1>Métodos de pago</h1>
+    <% if (success) { %><div class="alert alert-success" role="status"><%= success %></div><% } %>
+    <p class="muted" style="margin-bottom:1.5rem">Agrega todas las cuentas que quieras de cada tipo. En finalizar compra el cliente ve las cuentas <strong>activas</strong> del tipo que elija, con botón para copiar cada dato.</p>
+
+    <form method="POST" action="/admin/payment-methods" id="payForm">
+      <% let i = 0; %>
+      <% PAYMENT_TYPE_IDS.forEach(type => { const T = PAYMENT_TYPES[type]; const list = accounts.filter(a => a.type === type); %>
+      <section class="pay-type" data-type="<%= type %>">
+        <div class="pay-type-head">
+          <h2><%= T.label %></h2>
+          <button type="button" class="btn btn-outline btn-sm" data-add="<%= type %>">+ <%= T.addLabel %></button>
+        </div>
+        <div class="pay-list">
+          <% list.forEach(acc => { %>
+            <%- include('partials/payment-card', { T, type, acc, idx: i++ }) %>
+          <% }) %>
+        </div>
+        <p class="empty" <%= list.length ? 'hidden' : '' %>>Sin cuentas de <%= T.label %>.</p>
+      </section>
+      <% }) %>
+
+      <div style="margin-top:1rem;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px">
+        <p class="hint" style="max-width:560px">Al confirmar el pedido, el cliente pasa a WhatsApp y se le pide la captura del pago. Sin comprobante el pedido queda en "Esperando comprobante".</p>
+        <button class="btn btn-primary" type="submit">Guardar métodos de pago</button>
+      </div>
+    </form>
+  </div>
+
+  <% PAYMENT_TYPE_IDS.forEach(type => { %>
+  <template id="tpl-<%= type %>"><%- include('partials/payment-card', { T: PAYMENT_TYPES[type], type, acc: { active: true, fields: {} }, idx: '__IDX__' }) %></template>
+  <% }) %>
+
+<script>
+(function () {
+  let next = <%= accounts.length %>;
+  function renumber(section) {
+    section.querySelectorAll('.pay-card .num').forEach((el, n) => (el.textContent = 'Cuenta ' + (n + 1)));
+    section.querySelector('.empty').hidden = section.querySelectorAll('.pay-card').length > 0;
+  }
+  document.addEventListener('click', (e) => {
+    const add = e.target.closest('[data-add]');
+    if (add) {
+      const type = add.dataset.add;
+      const section = document.querySelector('.pay-type[data-type="' + type + '"]');
+      const html = document.getElementById('tpl-' + type).innerHTML.replace(/__IDX__/g, String(next++));
+      section.querySelector('.pay-list').insertAdjacentHTML('beforeend', html);
+      renumber(section);
+      section.querySelector('.pay-card:last-child input[type=text]').focus();
+      return;
+    }
+    const rm = e.target.closest('[data-remove]');
+    if (rm) {
+      const section = rm.closest('.pay-type');
+      rm.closest('.pay-card').remove();
+      renumber(section);
+    }
+  });
+  document.querySelectorAll('.pay-type').forEach(renumber);
+})();
+</script>
+</body>
+</html>

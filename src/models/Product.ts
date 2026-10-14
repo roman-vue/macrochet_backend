@@ -9,6 +9,7 @@ export interface IProduct extends Document {
   category: string;
   isBestseller: boolean;
   stock: number;
+  wholesalePrice?: number; // solo admin (select: false)
   createdAt: Date;
   updatedAt: Date;
 }
@@ -23,6 +24,8 @@ const productSchema = new Schema<IProduct>(
     category: { type: String, required: [true, 'Category is required'], trim: true },
     isBestseller: { type: Boolean, default: false },
     stock: { type: Number, default: 0, min: [0, 'Stock cannot be negative'] },
+    // Precio mayorista: oculto por defecto para que el API público nunca lo exponga
+    wholesalePrice: { type: Number, min: 0, select: false },
   },
   { timestamps: true }
 );

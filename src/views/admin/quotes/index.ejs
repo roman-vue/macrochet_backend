@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><%- include('../../partials/head', { title: 'Cotizaciones' }) %>
+<style>
+  .chip-borrador { background: var(--panel-2); color: var(--ink); }
+  .chip-enviada { background: var(--amber-bg); color: var(--amber); }
+  .chip-aprobada { background: var(--green); color: #fff; }
+  .chip-vencida { background: #fbeaea; color: #7a1f1f; }
+</style>
+</head>
+<body>
+  <%- include('../../partials/nav', { path: '/admin/quotes' }) %>
+  <div class="page-wide">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:24px">
+      <h1 style="margin:0">Cotizaciones</h1>
+      <a class="btn btn-primary" href="/admin/quotes/new">+ Nueva cotización</a>
+    </div>
+    <% if (success) { %><div class="alert alert-success" role="status"><%= success %></div><% } %>
+
+    <% if (!quotes.length) { %>
+      <div class="card muted" style="text-align:center;padding:3rem">No hay cotizaciones todavía. <a href="/admin/quotes/new" style="color:var(--wine);font-weight:700">Crear la primera</a></div>
+    <% } else { %>
+    <div class="card" style="padding:0;overflow-x:auto">
+      <table style="min-width:640px">
+        <thead><tr><th>N.º</th><th>Cliente</th><th>Fecha</th><th>Válida hasta</th><th>Total</th><th>Estado</th><th></th></tr></thead>
+        <tbody>
+          <% quotes.forEach(({ q, status, total }) => { %>
+          <tr>
+            <td style="font-weight:700"><a href="/admin/quotes/<%= q._id %>/edit"><%= formatQuoteNumber(q.number) %></a></td>
+            <td><%= q.client.name || '—' %><div class="hint"><%= q.client.city %></div></td>
+            <td><%= q.createdAt.toLocaleDateString('es-CO', { timeZone: 'America/Bogota' }) %></td>
+            <td><%= q.validUntil.toLocaleDateString('es-CO', { timeZone: 'America/Bogota' }) %></td>
+            <td><%= money(total) %></td>
+            <td><span class="chip chip-<%= status %>"><%= STATUS_LABEL[status] %></span></td>
+            <td>
+              <div style="display:flex;gap:.4rem;justify-content:flex-end;flex-wrap:wrap">
+                <a class="btn btn-sm btn-outline" href="/admin/quotes/<%= q._id %>/edit">Editar</a>
+                <a class="btn btn-sm btn-outline" href="/admin/quotes/<%= q._id %>/pdf">PDF</a>
+                <% if (status !== 'aprobada') { %>
+                <form method="POST" action="/admin/quotes/<%= q._id %>/approve" style="margin:0">
+                  <button class="btn btn-sm btn-green" type="submit">Marcar aprobada</button>
+                </form>
+                <% } %>
+              </div>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </div>
+</body>
+</html>

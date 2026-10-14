@@ -1,8 +1,12 @@
 import { Request, Response } from 'express';
 import { Announcement } from '../models/Announcement';
 
-export const getActiveAnnouncements = async (_req: Request, res: Response): Promise<void> => {
-  const announcements = await Announcement.find({ status: true }).sort({ order: 1, createdAt: -1 });
+// ?placement=carrusel → imágenes del hero; sin parámetro → anuncios (los antiguos no tienen placement)
+export const getActiveAnnouncements = async (req: Request, res: Response): Promise<void> => {
+  const placement = req.query.placement === 'carrusel'
+    ? 'carrusel'
+    : { $in: ['anuncio', null] };
+  const announcements = await Announcement.find({ status: true, placement }).sort({ order: 1, createdAt: -1 });
   res.json({ success: true, data: announcements });
 };
 

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><%- include('../../partials/head', { title: 'Pedido manual' }) %></head>
+<body>
+  <%- include('../../partials/nav', { path: '/admin/orders' }) %>
+  <div class="page">
+    <p style="margin-bottom:8px"><a href="/admin/orders" class="muted">← Pedidos</a></p>
+    <h1>Pedido manual</h1>
+    <% if (error) { %><div class="alert alert-error" role="alert"><%= error %></div><% } %>
+
+    <form method="POST" action="/admin/orders" class="card">
+      <h2>Cliente</h2>
+      <div class="form-group"><label for="name">Nombre</label><input id="name" name="name" type="text" required value="<%= values.name || '' %>" /></div>
+      <div class="grid-3" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+        <div class="form-group"><label for="phone">Celular</label><input id="phone" name="phone" type="tel" required value="<%= values.phone || '' %>" /></div>
+        <div class="form-group"><label for="email">Email (opcional)</label><input id="email" name="email" type="email" value="<%= values.email || '' %>" /></div>
+        <div class="form-group"><label for="city">Ciudad</label><input id="city" name="city" type="text" required value="<%= values.city || '' %>" /></div>
+        <div class="form-group"><label for="address">Dirección</label><input id="address" name="address" type="text" required value="<%= values.address || '' %>" /></div>
+      </div>
+
+      <h2 style="margin-top:1rem">Productos</h2>
+      <p class="hint" style="margin-bottom:1rem">Pon la cantidad en los productos del pedido. No se puede superar el stock.</p>
+      <div style="overflow-x:auto;margin-bottom:1.5rem">
+        <table>
+          <thead><tr><th>Producto</th><th>Precio</th><th>Stock</th><th style="width:110px">Cantidad</th></tr></thead>
+          <tbody>
+            <% products.forEach((p, i) => { %>
+            <tr>
+              <td><label for="q<%= i %>" style="text-transform:none;letter-spacing:0;font-size:.9rem;font-weight:400"><%= p.name %></label></td>
+              <td><%= money(p.price) %></td>
+              <td><% if (p.stock > 0) { %><%= p.stock %><% } else { %><span class="chip chip-agotado">Agotado</span><% } %></td>
+              <td>
+                <input type="hidden" name="productId" value="<%= p._id %>" />
+                <input id="q<%= i %>" name="qty" type="number" min="0" max="<%= p.stock %>" value="0" <%= p.stock > 0 ? '' : 'disabled' %> />
+              </td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="form-group">
+        <label for="paymentMethod">Método de pago</label>
+        <select id="paymentMethod" name="paymentMethod">
+          <% PAYMENT_TYPE_IDS.forEach(t => { %>
+            <option value="<%= t %>" <%= values.paymentMethod === t ? 'selected' : '' %>><%= PAYMENT_TYPES[t].label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <p class="hint" style="margin-bottom:1rem">El pedido queda en "Esperando comprobante". El stock se descuenta al confirmar el pago.</p>
+      <button class="btn btn-primary" type="submit">Crear pedido</button>
+    </form>
+  </div>
+</body>
+</html>

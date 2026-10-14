@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><%- include('../../partials/head', { title: 'Pedidos' }) %>
+<style>
+  .orders-layout { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; margin-top: 24px; }
+  .orders-list { flex: 999 1 520px; min-width: 0; }
+  .order-detail { flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 18px; }
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .filters a { min-height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--border); font-size: 14px; display: inline-flex; align-items: center; }
+  .filters a.on { background: var(--wine); color: var(--cream); border-color: var(--wine); font-weight: 700; }
+  .orders-list tbody tr { cursor: pointer; }
+  .orders-list tbody tr:hover, .orders-list tbody tr.sel { background: var(--row); }
+  .orders-list td a { display: block; }
+  .timeline { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .timeline li { display: flex; gap: 10px; align-items: center; font-size: 15px; }
+  .dot { width: 22px; height: 22px; flex: none; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; }
+  .dot.done { background: var(--green); color: #fff; }
+  .dot.now { border: 2.5px solid var(--wine); }
+  .dot.todo { border: 1.5px solid var(--sage); }
+  .timeline .when { margin-left: auto; font-size: 13px; color: var(--ink-2); }
+  .line { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; }
+  .sep { border-top: 1px solid var(--border); padding-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .total { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--wine); font-weight: 700; }
+</style>
+</head>
+<body>
+  <%- include('../../partials/nav', { path: '/admin/orders' }) %>
+  <div class="page-wide">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:24px">
+      <h1 style="margin:0">Pedidos</h1>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <a class="btn btn-outline" href="/admin/orders/export.csv">Exportar a Excel</a>
+        <a class="btn btn-outline" href="/admin/quotes/new">Nueva cotización</a>
+        <a class="btn btn-primary" href="/admin/orders/new">+ Pedido manual</a>
+      </div>
+    </div>
+
+    <% if (error) { %><div class="alert alert-error" role="alert"><%= error %></div><% } %>
+    <% if (success) { %><div class="alert alert-success" role="status"><%= success %></div><% } %>
+
+    <div class="grid-4">
+      <div class="stat-card"><div class="lbl">Esperando comprobante</div><div class="num"><%= kpis.esperando_comprobante %></div></div>
+      <div class="stat-card"><div class="lbl">En elaboración</div><div class="num"><%= kpis.en_elaboracion %></div></div>
+      <div class="stat-card"><div class="lbl">Enviados</div><div class="num"><%= kpis.enviado %></div></div>
+      <div class="stat-card"><div class="lbl">Entregados</div><div class="num"><%= kpis.entregado %></div></div>
+    </div>
+
+    <div class="orders-layout">
+      <section class="card orders-list" style="padding:20px">
+        <nav class="filters" aria-label="Filtrar por estado">
+          <a href="/admin/orders" class="<%= !status ? 'on' : '' %>">Todos</a>
+          <% statuses.forEach(s => { %>
+            <a href="/admin/orders?status=<%= s %>" class="<%= status === s ? 'on' : '' %>"><%= STATUS_LABEL[s] %></a>
+          <% }) %>
+        </nav>
+        <% if (!orders.length) { %>
+          <p class="muted" style="padding:2rem;text-align:center">No hay pedidos<%= status ? ' en este estado' : ' todavía' %>.</p>
+        <% } else { %>
+        <div style="overflow-x:auto">
+          <table style="min-width:520px">
+            <thead><tr><th>Pedido</th><th>Cliente</th><th>Fecha</th><th>Total</th><th>Estado</th></tr></thead>
+            <tbody>
+              <% orders.forEach(o => { const href = `/admin/orders?id=${o._id}${status ? '&status=' + status : ''}`; %>
+              <tr class="<%= selected && String(selected._id) === String(o._id) ? 'sel' : '' %>">
+                <td style="font-weight:700"><a href="<%= href %>">#<%= formatOrderNumber(o.number) %></a></td>
+                <td><a href="<%= href %>" tabindex="-1"><%= o.customer.name %></a></td>
+                <td><%= shortDate(o.createdAt) %></td>
+                <td><%= money(o.total) %></td>
+                <td><span class="chip chip-<%= o.status %>"><%= STATUS_LABEL[o.status] %></span></td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+
+      <% if (selected) { const idx = statuses.indexOf(selected.status); %>
+      <aside class="card order-detail" aria-label="Detalle del pedido">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <h2 style="margin:0">Pedido #<%= formatOrderNumber(selected.number) %></h2>
+          <span class="muted" style="font-size:14px"><%= shortDate(selected.createdAt) %></span>
+        </div>
+
+        <div>
+          <div class="eyebrow" style="margin-bottom:10px">Estado</div>
+          <ol class="timeline">
+            <% statuses.forEach((s, i) => {
+                 const h = selected.statusHistory.find(x => x.status === s);
+                 const cls = i < idx || (i === idx && s === 'entregado') ? 'done' : i === idx ? 'now' : 'todo'; %>
+              <li style="<%= cls === 'now' ? 'font-weight:700' : cls === 'todo' ? 'color:var(--ink-2)' : '' %>">
+                <span class="dot <%= cls %>" aria-hidden="true"><%= cls === 'done' ? '✓' : '' %></span>
+                <%= STATUS_LABEL[s] %>
+                <% if (h) { %><span class="when"><%= dateTime(h.at) %></span><% } %>
+              </li>
+            <% }) %>
+          </ol>
+        </div>
+
+        <div class="sep">
+          <div class="eyebrow">Productos</div>
+          <% selected.items.forEach(i => { %>
+            <div class="line"><span><%= i.qty %> × <%= i.name %><% if (i.color) { %> <span class="muted">· <%= i.color %></span><% } %></span><span><%= money(i.price * i.qty) %></span></div>
+          <% }) %>
+          <div class="line"><span>Envío</span><span><%= selected.shipping === null ? 'Por calcular' : money(selected.shipping) %></span></div>
+          <div class="line" style="font-weight:700;padding-top:4px"><span>Total</span><span class="total"><%= money(selected.total) %></span></div>
+        </div>
+
+        <div class="sep" style="line-height:1.5">
+          <div class="eyebrow">Cliente y envío</div>
+          <div style="font-weight:700"><%= selected.customer.name %></div>
+          <div><%= selected.customer.phone %><%= selected.customer.email ? ' · ' + selected.customer.email : '' %></div>
+          <div><%= selected.customer.address %>, <%= selected.customer.city %></div>
+          <div class="muted">Pago por <%= PAYMENT_TYPES[selected.paymentMethod] ? PAYMENT_TYPES[selected.paymentMethod].inMessage : selected.paymentMethod %></div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <% if (ACTION_LABEL[selected.status]) { %>
+            <form method="POST" action="/admin/orders/<%= selected._id %>/advance" style="margin:0">
+              <button class="btn btn-primary" type="submit" style="width:100%;min-height:50px"><%= ACTION_LABEL[selected.status] %></button>
+            </form>
+          <% } %>
+          <a class="btn btn-green" href="<%= waLink %>" target="_blank" rel="noopener" style="min-height:50px">Avisar al cliente · <%= STATUS_LABEL[selected.status] %></a>
+          <p class="hint">El stock se descuenta al confirmar el comprobante, una sola vez. Si algún producto ya no alcanza, el pedido no avanza.</p>
+        </div>
+      </aside>
+      <% } %>
+    </div>
+  </div>
+</body>
+</html>

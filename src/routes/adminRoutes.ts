@@ -73,7 +73,7 @@ router.post('/admin/products', requireLogin, upload.array('images', 10), a(async
   const files = (req.files as Express.Multer.File[]) ?? [];
   const images = files.map(f => f.path);
 
-  const { name, description, price, stock, category, isBestseller } = req.body as Record<string, string>;
+  const { name, description, price, stock, category, isBestseller, wholesalePrice } = req.body as Record<string, string>;
   const colorIds: string[] = req.body.colors
     ? Array.isArray(req.body.colors) ? req.body.colors : [req.body.colors]
     : [];
@@ -83,6 +83,7 @@ router.post('/admin/products', requireLogin, upload.array('images', 10), a(async
     description,
     price: parseFloat(price),
     stock: parseInt(stock ?? '0', 10),
+    ...(wholesalePrice?.trim() ? { wholesalePrice: parseFloat(wholesalePrice) } : {}),
     category,
     isBestseller: isBestseller === 'true',
     colors: colorIds,
@@ -104,7 +105,7 @@ router.post('/admin/products', requireLogin, upload.array('images', 10), a(async
 
 router.get('/admin/products/:id/edit', requireLogin, a(async (req, res) => {
   const [product, colors, categories] = await Promise.all([
-    Product.findById(req.params.id),
+    Product.findById(req.params.id).select('+wholesalePrice'),
     Color.find().sort({ name: 1 }),
     Product.distinct('category'),
   ]);
@@ -113,7 +114,7 @@ router.get('/admin/products/:id/edit', requireLogin, a(async (req, res) => {
 }));
 
 router.post('/admin/products/:id', requireLogin, upload.array('images', 10), a(async (req, res) => {
-  const { name, description, price, stock, category, isBestseller } = req.body as Record<string, string>;
+  const { name, description, price, stock, category, isBestseller, wholesalePrice } = req.body as Record<string, string>;
   const colorIds: string[] = req.body.colors
     ? Array.isArray(req.body.colors) ? req.body.colors : [req.body.colors]
     : [];
@@ -132,6 +133,7 @@ router.post('/admin/products/:id', requireLogin, upload.array('images', 10), a(a
   const updatedImages = [...product.images.filter(img => !toRemove.includes(img)), ...newImages];
 
   await Product.findByIdAndUpdate(req.params.id, {
+    ...(wholesalePrice?.trim() ? { wholesalePrice: parseFloat(wholesalePrice) } : { $unset: { wholesalePrice: 1 } }),
     name, description,
     price: parseFloat(price),
     stock: parseInt(stock ?? '0', 10),
@@ -142,7 +144,7 @@ router.post('/admin/products/:id', requireLogin, upload.array('images', 10), a(a
   });
 
   const [updatedProduct, colors, categories] = await Promise.all([
-    Product.findById(req.params.id),
+    Product.findById(req.params.id).select('+wholesalePrice'),
     Color.find().sort({ name: 1 }),
     Product.distinct('category'),
   ]);
@@ -220,46 +222,45 @@ router.post('/admin/colors/:id/delete', requireLogin, a(async (req, res) => {
 
 // ── Announcements ─────────────────────────────────────────────────────────────
 
-router.get('/admin/announcements', requireLogin, a(async (_req, res) => {
-  const announcements = await Announcement.find().sort({ order: 1, createdAt: -1 });
-  res.render('admin/announcements/index', { path: '/admin/announcements', announcements, editing: null, error: null, success: null });
-}));
+type AnnMode = 'anuncio' | 'carrusel';
+const modeOf = (placement: unknown): AnnMode => (placement === 'carrusel' ? 'carrusel' : 'anuncio');
+
+// Anuncios y Carrusel comparten pantalla; cada uno lista solo lo suyo
+async function renderAnn(res: Response, mode: AnnMode, extra: { editing?: unknown; error?: string | null; success?: string | null } = {}) {
+  const filter = mode === 'carrusel' ? { placement: 'carrusel' } : { placement: { $in: ['anuncio', null] } };
+  const announcements = await Announcement.find(filter).sort({ order: 1, createdAt: -1 });
+  res.render('admin/announcements/index', {
+    path: mode === 'carrusel' ? '/admin/carousel' : '/admin/announcements',
+    mode, announcements, editing: extra.editing ?? null, error: extra.error ?? null, success: extra.success ?? null,
+  });
+}
+
+router.get('/admin/announcements', requireLogin, a(async (_req, res) => renderAnn(res, 'anuncio')));
+router.get('/admin/carousel', requireLogin, a(async (_req, res) => renderAnn(res, 'carrusel')));
 
 router.get('/admin/announcements/:id/edit', requireLogin, a(async (req, res) => {
-  const [announcements, editing] = await Promise.all([
-    Announcement.find().sort({ order: 1, createdAt: -1 }),
-    Announcement.findById(req.params.id),
-  ]);
+  const editing = await Announcement.findById(req.params.id);
   if (!editing) return res.redirect('/admin/announcements');
-  res.render('admin/announcements/index', { path: '/admin/announcements', announcements, editing, error: null, success: null });
+  await renderAnn(res, modeOf(editing.placement), { editing });
 }));
 
 router.post('/admin/announcements', requireLogin, upload.single('image'), a(async (req, res) => {
   const file = req.file;
-  if (!file) {
-    const announcements = await Announcement.find().sort({ order: 1, createdAt: -1 });
-    return res.render('admin/announcements/index', {
-      path: '/admin/announcements', announcements, editing: null, success: null,
-      error: 'Debes seleccionar una imagen.',
-    });
-  }
-  const { title, message, order, status } = req.body as Record<string, string>;
+  if (!file) return renderAnn(res, modeOf(req.body.placement), { error: 'Debes seleccionar una imagen.' });
+  const { title, message, order, status, placement } = req.body as Record<string, string>;
   await Announcement.create({
     title,
     message,
+    placement: placement === 'carrusel' ? 'carrusel' : 'anuncio',
     image: file.path,
     order: parseInt(order ?? '0', 10),
     status: status === 'true',
   });
-  const announcements = await Announcement.find().sort({ order: 1, createdAt: -1 });
-  res.render('admin/announcements/index', {
-    path: '/admin/announcements', announcements, editing: null, error: null,
-    success: `Anuncio "${title}" creado.`,
-  });
+  await renderAnn(res, modeOf(placement), { success: placement === 'carrusel' ? `Foto "${title}" agregada al carrusel.` : `Anuncio "${title}" creado.` });
 }));
 
 router.post('/admin/announcements/:id', requireLogin, upload.single('image'), a(async (req, res) => {
-  const { title, message, order, status } = req.body as Record<string, string>;
+  const { title, message, order, status, placement } = req.body as Record<string, string>;
   const file = req.file;
 
   const current = await Announcement.findById(req.params.id);
@@ -272,25 +273,18 @@ router.post('/admin/announcements/:id', requireLogin, upload.single('image'), a(
   await Announcement.findByIdAndUpdate(req.params.id, {
     title,
     message,
+    placement: placement === 'carrusel' ? 'carrusel' : 'anuncio',
     order: parseInt(order ?? '0', 10),
     status: status === 'true',
     ...(file && { image: file.path }),
   });
-  const announcements = await Announcement.find().sort({ order: 1, createdAt: -1 });
-  res.render('admin/announcements/index', {
-    path: '/admin/announcements', announcements, editing: null, error: null,
-    success: 'Anuncio actualizado.',
-  });
+  await renderAnn(res, modeOf(placement), { success: placement === 'carrusel' ? 'Foto del carrusel actualizada.' : 'Anuncio actualizado.' });
 }));
 
 router.post('/admin/announcements/:id/toggle', requireLogin, a(async (req, res) => {
   const ann = await Announcement.findById(req.params.id);
   if (ann) await Announcement.findByIdAndUpdate(req.params.id, { status: !ann.status });
-  const announcements = await Announcement.find().sort({ order: 1, createdAt: -1 });
-  res.render('admin/announcements/index', {
-    path: '/admin/announcements', announcements, editing: null, error: null,
-    success: ann ? `Anuncio "${ann.title}" ${!ann.status ? 'activado' : 'desactivado'}.` : null,
-  });
+  await renderAnn(res, modeOf(ann?.placement), { success: ann ? `"${ann.title}" ${!ann.status ? 'activado' : 'desactivado'}.` : null });
 }));
 
 router.post('/admin/announcements/:id/delete', requireLogin, a(async (req, res) => {
@@ -298,11 +292,7 @@ router.post('/admin/announcements/:id/delete', requireLogin, a(async (req, res) 
   if (ann?.image) {
     await deleteImage(ann.image);
   }
-  const announcements = await Announcement.find().sort({ order: 1, createdAt: -1 });
-  res.render('admin/announcements/index', {
-    path: '/admin/announcements', announcements, editing: null, error: null,
-    success: ann ? `Anuncio "${ann.title}" eliminado.` : 'Anuncio eliminado.',
-  });
+  await renderAnn(res, modeOf(ann?.placement), { success: ann ? `"${ann.title}" eliminado.` : 'Eliminado.' });
 }));
 
 // ── Categories ────────────────────────────────────────────────────────────────

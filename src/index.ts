@@ -11,6 +11,10 @@ import announcementRoutes from './routes/announcements';
 import categoryRoutes from './routes/categories';
 import adminRoutes from './routes/adminRoutes';
 import sitemapRoutes from './routes/sitemap';
+import orderRoutes from './routes/orders';
+import paymentMethodRoutes from './routes/paymentMethods';
+import adminOrderRoutes from './routes/adminOrders';
+import adminQuoteRoutes from './routes/adminQuotes';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -36,6 +40,8 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')
 app.use(requestLogger);
 
 // Admin panel (EJS views)
+app.use('/', adminOrderRoutes);
+app.use('/', adminQuoteRoutes);
 app.use('/', adminRoutes);
 
 // API Routes
@@ -43,6 +49,8 @@ app.use('/api/products', productRoutes);
 app.use('/api/colors', colorRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/payment-methods', paymentMethodRoutes);
 
 // Sitemap dinámico (Netlify lo proxea desde /sitemap.xml)
 app.use('/', sitemapRoutes);

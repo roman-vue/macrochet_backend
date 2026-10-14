@@ -32,6 +32,9 @@ COPY --from=builder /app/package.json  ./package.json
 # Las vistas EJS se sirven desde src/views en dev pero el build las necesita en runtime
 COPY src/views ./src/views
 
+# Fuentes y logo para los PDF de cotizaciones
+COPY assets ./assets
+
 # Directorio de uploads (las imágenes se montan como volumen en producción)
 RUN mkdir -p public/uploads logs \
     && chown -R appuser:appgroup /app

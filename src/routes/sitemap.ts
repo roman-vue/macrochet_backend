@@ -21,6 +21,9 @@ router.get('/sitemap.xml', async (_req: Request, res: Response): Promise<void> =
 
     const urls = [
       `  <url>\n    <loc>${SITE_URL}/</loc>\n    <changefreq>weekly</changefreq>\n    <priority>1.0</priority>\n  </url>`,
+      ...['privacidad', 'devoluciones', 'beneficios'].map(
+        (slug) => `  <url>\n    <loc>${SITE_URL}/${slug}/</loc>\n    <changefreq>yearly</changefreq>\n    <priority>0.3</priority>\n  </url>`
+      ),
       ...products.map(
         (p) =>
           `  <url>\n    <loc>${SITE_URL}/productos/${slugify(p.name) ? `${slugify(p.name)}-` : ''}${p._id}</loc>\n    <lastmod>${p.updatedAt.toISOString()}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>`
